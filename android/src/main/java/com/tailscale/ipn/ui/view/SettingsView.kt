@@ -43,6 +43,7 @@ import com.tailscale.ipn.ui.util.AppVersion
 import com.tailscale.ipn.ui.util.Lists
 import com.tailscale.ipn.ui.util.set
 import com.tailscale.ipn.ui.viewModel.AppViewModel
+import com.tailscale.ipn.ui.viewModel.IpnViewModel.NodeState
 import com.tailscale.ipn.ui.viewModel.SettingsNav
 import com.tailscale.ipn.ui.viewModel.SettingsViewModel
 
@@ -64,6 +65,8 @@ fun SettingsView(
   val useTailscaleSubnets by MDMSettings.useTailscaleSubnets.flow.collectAsState()
   val isClientRemoteLoggingEnabled by viewModel.isClientRemoteLoggingEnabled.collectAsState()
   val isStartOnBootEnabled by viewModel.isStartOnBootEnabled.collectAsState()
+  val nodeState by viewModel.nodeState.collectAsState()
+  val showExitNodePicker by MDMSettings.exitNodesPicker.flow.collectAsState()
   var showDisableLoggingDialog by remember { mutableStateOf(false) }
 
   Scaffold(
@@ -108,6 +111,24 @@ fun SettingsView(
               },
           onClick = settingsNav.onNavigateToDNSSettings,
       )
+
+      if (showExitNodePicker.value == ShowHide.Show) {
+        Lists.ItemDivider()
+        ListItemText(
+            R.string.exit_node_settings,
+            subtitle =
+                stringResource(
+                    when (nodeState) {
+                      NodeState.ACTIVE_AND_RUNNING,
+                      NodeState.OFFLINE_ENABLED,
+                      NodeState.OFFLINE_MDM,
+                      NodeState.RUNNING_AS_EXIT_NODE -> R.string.enabled
+                      else -> R.string.disabled
+                    }
+                ),
+            onClick = settingsNav.onNavigateToExitNodes,
+        )
+      }
 
       Lists.ItemDivider()
       ListItemText(
@@ -239,5 +260,5 @@ fun SettingsPreview() {
   vm.tailNetLockEnabled.set(true)
   vm.isAdmin.set(true)
   vm.managedByOrganization.set("Tails and Scales Inc.")
-  SettingsView(SettingsNav({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}), vm)
+  SettingsView(SettingsNav({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}), vm)
 }

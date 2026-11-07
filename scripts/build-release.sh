@@ -20,6 +20,19 @@ test -f .signing/tailscale-release.p12
 mkdir -p android/libs dist .tmp
 go run tailscale.com/cmd/mkversion > tailscale.version
 source tailscale.version
+base_version_short="$VERSION_SHORT"
+VERSION_PATCH=$((VERSION_PATCH + 1))
+VERSION_SHORT="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
+VERSION_LONG="${VERSION_SHORT}${VERSION_LONG#"$base_version_short"}"
+VERSION_XCODE="${VERSION_XCODE%.*}.${VERSION_PATCH}"
+VERSION_WINRES="${VERSION_MAJOR},${VERSION_MINOR},${VERSION_PATCH},0"
+sed -i \
+  -e "s/^VERSION_PATCH=.*/VERSION_PATCH=$VERSION_PATCH/" \
+  -e "s/^VERSION_SHORT=.*/VERSION_SHORT=\"$VERSION_SHORT\"/" \
+  -e "s/^VERSION_LONG=.*/VERSION_LONG=\"$VERSION_LONG\"/" \
+  -e "s/^VERSION_XCODE=.*/VERSION_XCODE=\"$VERSION_XCODE\"/" \
+  -e "s/^VERSION_WINRES=.*/VERSION_WINRES=\"$VERSION_WINRES\"/" \
+  tailscale.version
 go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
 
 go run -ldflags "-X tailscale.com/version.longStamp=$VERSION_LONG -X tailscale.com/version.shortStamp=$VERSION_SHORT" \

@@ -42,6 +42,7 @@
     <string name="use_ts_dns">使用 Tailscale DNS</string>
     <string name="internal_debug_options">内部调试选项</string>
     <string name="exit_node">出口节点</string>
+    <string name="exit_node_settings">出口节点</string>
     <string name="exit_node_offline">出口节点离线</string>
     <string name="running_exit_node">在此设备上运行</string>
     <string name="starting">正在连接…</string>

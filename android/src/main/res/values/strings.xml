@@ -61,6 +61,7 @@
 
     <!-- Strings for the main screen -->
     <string name="exit_node">EXIT NODE</string>
+    <string name="exit_node_settings">Exit node</string>
     <string name="exit_node_offline">EXIT NODE OFFLINE</string>
     <string name="running_exit_node">Running on this device</string>
     <string name="exit_node_offline_mdm_orgname">The exit node selected by %1$s is currently offline. Internet traffic is blocked. Contact a network administrator for help.</string>

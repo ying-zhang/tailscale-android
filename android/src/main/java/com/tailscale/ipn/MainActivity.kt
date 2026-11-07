@@ -364,6 +364,7 @@ class MainActivity : ComponentActivity() {
                       onNavigateToBugReport = { navController.navigate(BugReportRoute) },
                       onNavigateToAbout = { navController.navigate(AboutRoute) },
                       onNavigateToDNSSettings = { navController.navigate(DNSSettingsRoute) },
+                      onNavigateToExitNodes = { navController.navigate(ExitNodesRoute) },
                       onNavigateToSplitTunneling = { navController.navigate(SplitTunnelingRoute) },
                       onNavigateToTailnetLock = { navController.navigate(TailnetLockRoute) },
                       onNavigateToSubnetRouting = { navController.navigate(SubnetRoutingRoute) },
@@ -376,9 +377,7 @@ class MainActivity : ComponentActivity() {
                   )
               val exitNodePickerNav =
                   ExitNodePickerNav(
-                      onNavigateBackHome = {
-                        navController.popBackStack<MainRoute>(inclusive = false)
-                      },
+                      onNavigateBackHome = { navController.popBackStack() },
                       onNavigateBackToExitNodes = backTo<ExitNodesRoute>(),
                       onNavigateToMullvad = { navController.navigate(MullvadRoute) },
                       onNavigateToMullvadInfo = { navController.navigate(MullvadInfoRoute) },

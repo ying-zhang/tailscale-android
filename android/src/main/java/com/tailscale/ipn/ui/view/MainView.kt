@@ -146,6 +146,7 @@ fun MainView(
         val isPrepared by viewModel.isVpnPrepared.collectAsState()
         val isOn by viewModel.vpnToggleState.collectAsState()
         val state by viewModel.ipnState.collectAsState()
+        val nodeState by viewModel.nodeState.collectAsState()
         val user by viewModel.loggedInUser.collectAsState()
         val stateVal by viewModel.stateRes.collectAsState(initial = R.string.placeholder)
         val stateStr = stringResource(id = stateVal)
@@ -226,7 +227,16 @@ fun MainView(
             if (showKeyExpiry) {
               netmap?.let { ExpiryNotification(netmap = it, action = { viewModel.login() }) }
             }
-            if (showExitNodePicker.value == ShowHide.Show) {
+            if (
+                showExitNodePicker.value == ShowHide.Show &&
+                    nodeState in
+                        setOf(
+                            NodeState.ACTIVE_AND_RUNNING,
+                            NodeState.OFFLINE_ENABLED,
+                            NodeState.OFFLINE_MDM,
+                            NodeState.RUNNING_AS_EXIT_NODE,
+                        )
+            ) {
               ExitNodeStatus(
                   navAction = navigation.onNavigateToExitNodes,
                   viewModel = viewModel,
