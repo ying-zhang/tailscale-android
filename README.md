@@ -19,6 +19,8 @@
 
 本分支构建产物为仓库根目录的 `tailscale-release.apk`，最低 Android 8.0（API 26）。
 
+云端构建的 ARM64 APK 可在本仓库的 [Releases 页面](https://github.com/ying-zhang/tailscale-android/releases)下载。发布说明包含安装要求、源码提交和验证结果，附件包含 APK 及 `SHA256SUMS` 校验文件。当前基于上游开发分支，发布标记为 Pre-release。
+
 ```powershell
 adb install -r ./tailscale-release.apk
 ```
@@ -62,6 +64,12 @@ keyPassword=YOUR_PASSWORD
 `.signing` 已被 Git 忽略，私钥和密码不随仓库发布。详细说明见 [中文构建说明](BUILD-ZH.md)，验证结果及已知限制见 [修改审查记录](CODE-REVIEW-ZH.md)。其他平台的上游构建方式见 [英文说明](README.en.md)。
 
 当前基于上游开发分支，后端依赖为 `1.105.0-pre`，并非稳定发行标签。原生部分使用标准 Go 工具链及上游支持的 `not_tailscale_go` 构建标签；官方构建使用其指定的 Tailscale Go 工具链，因此不保证二进制与官方 APK 逐字节一致。完整 `lintRelease` 仍有上游兼容性及部分翻译相关问题，具体见审查记录。
+
+## GitHub Actions 构建和发布
+
+进入 **Actions → ARM64 Release APK → Run workflow**，选择 `main` 分支。流程仅构建 ARM64，使用仓库 Secrets 中的密钥签名，完成检查后自动发布到 Releases，并附上中文说明。不会因 PR 或普通推送自动发布。
+
+初次配置所需 Secrets、备份方法和命令见 [Actions 发布说明](ACTIONS-ZH.md)。本机已有密钥的用户应备份整个 `.signing` 目录，其中 `.p12` 为签名私钥，`release.properties` 保存密码及别名。保持同一签名才能继续覆盖升级已有安装。
 
 ## 反馈与许可证
 

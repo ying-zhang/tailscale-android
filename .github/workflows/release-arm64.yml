@@ -1,0 +1,138 @@
+name: ARM64 Release APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: arm64-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - name: Check out full history for official version stamps
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Java 21
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install pinned Android SDK components
+        shell: bash
+        run: |
+          set -euo pipefail
+          # sdkmanager exits early when licenses are already accepted; ignore yes's SIGPIPE.
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            'platforms;android-36' 'platforms;android-37.0' \
+            'build-tools;37.0.0' 'ndk;30.0.16248370'
+
+      - name: Restore private signing material
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SIGNING_PROPERTIES: ${{ secrets.ANDROID_SIGNING_PROPERTIES }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          key = os.environ['KEYSTORE_BASE64']
+          properties = os.environ['SIGNING_PROPERTIES']
+          if not key or not properties:
+              raise SystemExit('Configure ANDROID_KEYSTORE_BASE64 and ANDROID_SIGNING_PROPERTIES secrets first')
+          signing = Path('.signing')
+          signing.mkdir(mode=0o700, exist_ok=True)
+          for name, data in (
+              ('tailscale-release.p12', base64.b64decode(key, validate=True)),
+              ('release.properties', properties.encode()),
+          ):
+              target = signing / name
+              target.write_bytes(data)
+              target.chmod(0o600)
+          PY
+
+      - name: Build, test and verify signed ARM64 APK
+        run: bash scripts/build-release.sh
+
+      - name: Prepare Chinese release notes
+        id: release
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          info = json.loads(Path('.tmp/release-info.json').read_text())
+          tag = f"android-{info['version_short']}-build.{os.environ['GITHUB_RUN_NUMBER']}.{os.environ['GITHUB_RUN_ATTEMPT']}"
+          title = f"Android ARM64 中文定制版 {info['version_short']}"
+          repo = os.environ['GITHUB_REPOSITORY']
+          source = os.environ['SOURCE_SHA']
+          notes = f"""Tailscale Android 中文定制版，仅包含 **arm64-v8a**，最低 Android 8.0（API 26）。本分支使用自有签名，属于基于上游开发分支的预发布构建。
+
+          - 新增默认开启的「开机自动连接」：已登录并批准 VPN 后，重启并首次解锁可自动恢复连接。
+          - 主要操作、设置及部分通知提供简体中文；未翻译内容回退英文。
+          - 保留官方版本格式，支持管理后台正常识别版本。
+
+          **安装**：下载下面的 `.apk` 附件。与本分支已有安装使用同一签名，可以覆盖升级并保留登录。官方版签名不同，切换时需先卸载官方版并重新登录。请勿卸载已安装的本分支版本来升级。
+
+          **版本**：`{info['version_long']}`；版本码 `{info['version_code']}`。源码提交：[{source[:9]}](https://github.com/{repo}/commit/{source})。
+
+          **检查**：格式检查、单元测试、release 必需 lint、APK 签名、仅 ARM64 和 16 KB 页对齐验证通过。完整 lint 的已知限制、开机条件及本机真机测试记录见[审查说明](https://github.com/{repo}/blob/{source}/CODE-REVIEW-ZH.md)。本次 CI 运行未执行真机重启测试。
+
+          `SHA256SUMS` 提供 APK 的 SHA-256 校验值。构建说明见[中文 README](https://github.com/{repo}/blob/{source}/README.md)。
+          """
+          # Remove workflow indentation from Markdown paragraphs without changing content.
+          notes = '\n'.join(line.lstrip() for line in notes.splitlines()).strip() + '\n'
+          Path('dist/RELEASE-NOTES.md').write_text(notes)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'tag={tag}\ntitle={title}\n')
+          PY
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tailscale-arm64-release
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_TITLE: ${{ steps.release.outputs.title }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/*.apk dist/SHA256SUMS \
+            --target "$SOURCE_SHA" --title "$RELEASE_TITLE" \
+            --notes-file dist/RELEASE-NOTES.md --prerelease
+          printf '已发布 ARM64 APK：https://github.com/%s/releases/tag/%s\n' \
+            "$GH_REPO" "$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove private signing material
+        if: always()
+        run: rm -rf -- .signing
