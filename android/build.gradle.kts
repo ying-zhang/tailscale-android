@@ -16,11 +16,13 @@ repositories {
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_17 } }
 
 android {
-  ndkVersion = "23.1.7779620"
+  ndkVersion = "30.0.16248370"
+  buildToolsVersion = providers.gradleProperty("androidBuildToolsVersion").get()
   compileSdk = providers.gradleProperty("androidCompileSdk").get().toInt()
 
   defaultConfig {
     minSdk = 26
+    ndk { abiFilters += "arm64-v8a" }
     targetSdk = providers.gradleProperty("androidApiLevel").get().toInt()
 
     versionCode = computeVersionCode()
@@ -62,6 +64,19 @@ android {
           "proguard-rules.pro",
       )
     }
+  }
+
+  val signingFile = rootProject.file("../.signing/release.properties")
+  if (signingFile.exists()) {
+    val signing = Properties().apply { signingFile.inputStream().use(::load) }
+    val localRelease =
+        signingConfigs.create("localRelease") {
+          storeFile = rootProject.file(signing.getProperty("storeFile"))
+          storePassword = signing.getProperty("storePassword")
+          keyAlias = signing.getProperty("keyAlias")
+          keyPassword = signing.getProperty("keyPassword")
+        }
+    buildTypes.getByName("release").signingConfig = localRelease
   }
 }
 

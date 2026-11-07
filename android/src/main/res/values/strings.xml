@@ -50,6 +50,8 @@
 
     <!-- Strings for the settings screen -->
     <string name="settings_title">Settings</string>
+    <string name="start_on_boot">Start on boot</string>
+    <string name="start_on_boot_description">Automatically connect after restarting and unlocking your device. Sign in and approve VPN access first. Some devices also require allowing auto-start in system settings.</string>
     <string name="settings_admin_prefix">"Manage your tailnet settings in the "</string>
     <string name="settings_admin_link">admin console</string>
     <string name="about_tailscale">About Tailscale</string>

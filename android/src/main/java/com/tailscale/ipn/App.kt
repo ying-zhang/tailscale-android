@@ -564,6 +564,7 @@ open class UninitializedApp : Application() {
     // Key for shared preference that tracks whether or not we're able to start
     // the VPN (i.e. we're logged in and machine is authorized).
     private const val ABLE_TO_START_VPN_KEY = "ableToStartVPN"
+    private const val START_ON_BOOT_KEY = "startOnBoot"
 
     // The value is 'disallowedApps' as it used to represent
     // only disallowed applications. This has been changed
@@ -614,6 +615,12 @@ open class UninitializedApp : Application() {
 
   private fun getUnencryptedPrefs(): SharedPreferences {
     return getSharedPreferences(UNENCRYPTED_PREFERENCES, MODE_PRIVATE)
+  }
+
+  fun isStartOnBootEnabled(): Boolean = getUnencryptedPrefs().getBoolean(START_ON_BOOT_KEY, true)
+
+  fun setStartOnBootEnabled(enabled: Boolean) {
+    getUnencryptedPrefs().edit().putBoolean(START_ON_BOOT_KEY, enabled).apply()
   }
 
   /**

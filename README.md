@@ -1,186 +1,70 @@
-# Tailscale Android Client
+# Tailscale Android 中文定制版
 
-https://tailscale.com
+[English / 上游英文说明](README.en.md)
 
-Private WireGuard® networks made easy
+基于 [Tailscale 官方 Android 客户端源码](https://github.com/tailscale/tailscale-android) 的个人定制分支，增加开机自动连接和主要界面的简体中文翻译。使用独立签名，不是 Tailscale 官方发行的 APK。
 
-## Overview
+## 功能
 
-This repository contains the open source Tailscale Android client.
+- **开机自动连接**：设置中的「开机自动连接」默认开启；手机重启并首次解锁后，自动启动 VPN 服务，无需点击连接。开启时，即使重启前手动断开，重启后也会连接。
+- **主要操作汉化**：连接、断开、登录、设置、设备列表等常用操作及部分通知使用简体中文，其余内容回退英文。手机系统语言设为简体中文（中国大陆）时启用。
+- **ARM64 构建**：当前默认仅打包 `arm64-v8a`，适用于 ARM64 Android 手机。
+- **保留官方版本格式**：Android 版本名及后端版本由上游 `mkversion` 生成，避免自定义版本后缀影响管理后台的版本识别。
 
-## Using
+首次使用须打开应用，完成账号登录、设备审批和 Android VPN 授权。自签名版本可以登录 Tailscale 账号。
 
-#### Tailscale Packages
+开机连接需要首次解锁后才能读取加密凭据。系统强行停止应用、厂商限制后台运行、VPN 权限被撤销或账号过期，都可能阻止连接。请在系统设置中允许自启动和后台运行。Android 的「始终开启 VPN」是独立的系统设置，不受本应用开机连接开关控制。
 
-The latest stable release APK can be obtained from the [Tailscale Packages Stable Track](https://pkgs.tailscale.com/stable/#android).
+## 安装与升级
 
-Unstable releases can be obtained from the [Tailscale Packages Unstable Track](https://pkgs.tailscale.com/unstable/#android).
+本分支构建产物为仓库根目录的 `tailscale-release.apk`，最低 Android 8.0（API 26）。
 
-These APKs include all supported platforms and architectures.  For installing compact APKs, Android TV, or if you want automatic updates, visit the [Google Play Store](https://play.google.com/store/apps/details?id=com.tailscale.ipn).
-
-#### Google Playstore
-
-[<img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png"
-     alt="Get it on Google Play"
-     height="80">](https://play.google.com/store/apps/details?id=com.tailscale.ipn)
-
-Help us test new features and bug-fixes before they ship to all users! A [beta testing track](https://play.google.com/apps/testing/com.tailscale.ipn) is available on the Play Store. 
-
-#### Amazon Appstore
-
-The app can be downloaded from the [Amazon Appstore](https://www.amazon.com/dp/B0D38TRB3N) for Amazon Fire tablets and Fire TV devices.
-
-#### F-Droid
-
-The [F-Droid](https://f-droid.org/packages/com.tailscale.ipn/) project builds the source code in this repository and maintains independently-built APKs. Note that F-Droid builds are not released, updated, or verified by the Tailscale team.
-
-## Preparing a build environment
-
-There are several options for setting up a build environment. The Android Studio
-path is the most useful path for longer term development.
-
-In all cases you will need:
-
-- Go runtime
-- Android SDK
-- Android SDK components (`make androidsdk` will install them)
-
-### Android Studio
-
-1. Install a Go runtime (https://go.dev/dl/).
-2. Install Android Studio (https://developer.android.com/studio).
-3. Start Android Studio, from the Welcome screen select "More Actions" and "SDK Manager".
-4. In the SDK manager, select the "SDK Tools" tab and install the "Android SDK Command-line Tools (latest)".
-3. Run `make androidsdk` to install the necessary SDK components.
-
-If you would prefer to avoid Android Studio, you can also install an Android
-SDK. The makefile detects common paths, so `sudo apt install android-sdk` is
-sufficient on Debian / Ubuntu systems. To use an Android SDK installed in a
-non-standard location, set the `ANDROID_SDK_ROOT` environment variable to the
-path to the SDK.
-
-If you installed Android Studio the tools may not be in your path. To get the
-correct tool path, run `make androidpath` and export the provided path in your
-shell.
-
-#### Code Formatting
-
-The ktmft plugin on the default setting should be used to autoformat all Java, Kotlin
-and XML files in Android Studio.  Enable "Format on Save".
-
-### Docker
-
-If you wish to avoid installing software on your host system, a Docker based development strategy is available, you can build and start a shell with:
-
-```sh
-make docker-shell
+```powershell
+adb install -r ./tailscale-release.apk
 ```
 
-Several other makefile recipes are available for setting up the proper build environment and running builds.
+包名仍为 `com.tailscale.ipn`。由于签名不同，从官方版切换到本分支时需先卸载官方版，卸载会清除本地登录状态。此后用同一私钥签名且版本码不降低的 APK 覆盖升级，可保留应用数据和登录状态；请妥善备份签名文件。
 
-Note that the docker makefile recipes s will preserve the image and remove container on completion.
-If changes are made to the build environment or toolchain, cached docker images may need to be rebuilt.
-The docker build image name is parameterized in the makefile and changing it provides a simple means to do this.
+需要官方发行版时，请访问 [Tailscale 官方下载页](https://tailscale.com/download/android) 或 [官方 APK 软件包](https://pkgs.tailscale.com/stable/#android)。这些下载提供的是官方客户端。
 
-### Nix
+## Windows 构建
 
-If you have Nix 2.4 or later installed, a Nix development environment can
-be set up with:
+已验证的工具组合：Go 1.27.3、JDK 21、Android SDK 37、Build Tools 37.0.0、NDK 30.0.16248370、Gradle 9.8.2（仓库 Wrapper）。SDK 组件需事先安装。
 
-```sh
-alias nix='nix --extra-experimental-features "nix-command flakes"'
-nix develop
+在 PowerShell 7 中运行：
+
+```powershell
+./scripts/build-release.ps1 `
+  -SdkRoot 'C:\App\android-sdk' `
+  -JavaRoot 'C:\App\jdk21\jdk-21.0.12.1+1' `
+  -GoRoot 'C:\path\to\go'
 ```
 
-The flake provides host tools such as Java, `make`, `curl`, and `git`, and
-points the build at a repo-local Android SDK in `./android-sdk`. The SDK
-directory is ignored by Git and is reused across builds.
+默认 Go 路径为 `.tmp/toolchain/go`。脚本读取 Windows 系统中简单的 `主机:端口` 代理配置，限制编译并发以降低内存占用，并执行格式检查、单元测试、release 必需 lint 检查、构建和签名验证。仅修改 Kotlin / XML 时，可加 `-SkipNative` 复用已生成的 Go AAR。
 
-On first use, install the Android SDK components:
+构建前需自行生成签名密钥，并创建 `.signing/release.properties`。可使用 JDK 的 `keytool` 交互式设置密码：
 
-```sh
-make androidsdk
+```powershell
+New-Item -ItemType Directory -Force .signing
+keytool -genkeypair -keystore .signing/tailscale-release.p12 `
+  -storetype PKCS12 -alias tailscale-local -keyalg RSA -keysize 4096 -validity 10000
 ```
 
-Then build normally:
+配置文件示例（路径相对于 `android` 目录；将密码替换为自己的密码）：
 
-```sh
-make tailscale-debug
+```properties
+storeFile=../.signing/tailscale-release.p12
+storePassword=YOUR_PASSWORD
+keyAlias=tailscale-local
+keyPassword=YOUR_PASSWORD
 ```
 
-The debug APK is written to `./tailscale-debug.apk`.
+`.signing` 已被 Git 忽略，私钥和密码不随仓库发布。详细说明见 [中文构建说明](BUILD-ZH.md)，验证结果及已知限制见 [修改审查记录](CODE-REVIEW-ZH.md)。其他平台的上游构建方式见 [英文说明](README.en.md)。
 
-For one-shot commands without entering an interactive shell:
+当前基于上游开发分支，后端依赖为 `1.105.0-pre`，并非稳定发行标签。原生部分使用标准 Go 工具链及上游支持的 `not_tailscale_go` 构建标签；官方构建使用其指定的 Tailscale Go 工具链，因此不保证二进制与官方 APK 逐字节一致。完整 `lintRelease` 仍有上游兼容性及部分翻译相关问题，具体见审查记录。
 
-```sh
-nix develop --command make androidsdk
-nix develop --command make tailscale-debug
-```
+## 反馈与许可证
 
-For faster Kotlin-only iteration while avoiding the `gomobile bind` step:
+本分支新增功能的问题请提交到本仓库的 Issues；官方客户端或服务的问题请使用 [Tailscale 官方问题跟踪器](https://github.com/tailscale/tailscale/issues)。贡献请在提交中添加 DCO `Signed-off-by`。
 
-```sh
-nix develop --command bash -lc 'cd android && ./gradlew ktfmtCheck compileDebugKotlin'
-```
-
-  ## Integration tests
-    
-  In GitHub Actions, integration tests run automatically for pull requests that change relevant Android, Go, or build/test infrastructure code. They can also be triggered by adding the run-integration-test label to a pull request or manually through the Integration Test workflow.
-
-## Building
-
-```sh
-make apk
-make install
-```
-
-## Building a release
-
-Use `make tag_release` to stamp the Play Store version code, update the version
-name, and tag the current commit. The version code is derived from wall-clock
-time (minutes since the Unix epoch) at release time and committed into
-`android/build.gradle`, so it increases monotonically across all builds and
-branches while staying fixed for any given commit.
-
-We only guarantee to support the latest Go release and any Go beta or
-release candidate builds (currently Go 1.14) in module mode. It might
-work in earlier Go versions or in GOPATH mode, but we're making no
-effort to keep those working.
-
-## Developing on a Fire Stick TV
-
-On the Fire Stick:
-
-* Settings > My Fire TV > Developer Options > ADB Debugging > ON
-
-Then some useful commands:
-```
-adb connect 10.2.200.213:5555
-adb install -r tailscale-fdroid.apk
-adb shell am start -n com.tailscale.ipn/com.tailscale.ipn.MainActivity
-adb shell pm uninstall com.tailscale.ipn
-```
-
-## Bugs
-
-Please file any issues about this code or the hosted service on
-[the tailscale issue tracker](https://github.com/tailscale/tailscale/issues).
-
-## Contributing
-
-`under_construction.gif`
-
-PRs welcome, but we are still working out our contribution process and
-tooling.
-
-We require [Developer Certificate of
-Origin](https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin)
-`Signed-off-by` lines in commits.
-
-## About Us
-
-We are [Tailscale](https://tailscale.com). See
-https://tailscale.com/company for more about us and what we're
-building.
-
-WireGuard is a registered trademark of Jason A. Donenfeld.
+本项目遵循 [BSD-3-Clause 许可证](LICENSE)。Tailscale 为原项目开发者；WireGuard 是 Jason A. Donenfeld 的注册商标。
